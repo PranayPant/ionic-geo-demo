@@ -8,6 +8,7 @@
     "@capacitor/haptics": "4.1.0",
     "@capacitor/keyboard": "4.1.1",
     "@capacitor/status-bar": "4.1.1",
+    "@craco/craco": "^7.0.0",
     "@ionic/react": "^6.0.0",
     "@ionic/react-router": "^6.0.0",
     "@testing-library/jest-dom": "^5.11.9",
@@ -42,8 +43,10 @@
     "workbox-streams": "^5.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "cross-env TAILWIND_MODE=watch craco start",
+    "build": "craco build",
+    "ionic:serve": "cross-env TAILWIND_MODE=watch craco start",
+    "ionic:build": "craco build",
     "test": "react-scripts test --transformIgnorePatterns 'node_modules/(?!(@ionic/react|@ionic/react-router|@ionic/core|@stencil/core|ionicons)/)'",
     "eject": "react-scripts eject"
   },
@@ -69,7 +72,11 @@
     ]
   },
   "devDependencies": {
-    "@capacitor/cli": "4.7.0"
+    "@capacitor/cli": "4.7.0",
+    "autoprefixer": "^9.8.8",
+    "cross-env": "^7.0.3",
+    "postcss": "^7.0.39",
+    "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.2.17"
   },
   "description": "An Ionic project"
 }
