@@ -3,3 +3,10 @@
     top: 50px;
     height: 100%;
 }
+capacitor-google-map {
+  display: inline-block;
+  width: 275px;
+  height: 400px;
+  z-index: 88888;
+}
+
