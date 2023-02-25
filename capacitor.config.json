@@ -1,0 +1,6 @@
+{
+	"appId": "io.ionic.starter",
+	"appName": "ionic-geo-demo",
+	"webDir": "build",
+	"bundledWebRuntime": false
+}
