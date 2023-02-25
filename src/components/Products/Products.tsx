@@ -1,9 +1,9 @@
 import {
   IonPage,
   IonItem,
-  IonLabel,
   IonList,
   useIonViewWillEnter,
+  IonContent,
 } from "@ionic/react";
 import React from "react";
 import { Product } from "../../types/products";
@@ -18,17 +18,18 @@ const Products: React.FC = () => {
   });
   return (
     <IonPage>
-      <section>
-        <IonList className="product-list">
+      <IonContent>
+        <IonList className="container product-list">
           {products.map((p) => (
             <IonItem key={p.id}>
-              <IonLabel>
-                <IonLabel>{p.description}</IonLabel>
-              </IonLabel>
+              <div className="flex-col">
+                <span>{p.title}</span>
+                <span>{p.category}</span>
+              </div>
             </IonItem>
           ))}
         </IonList>
-      </section>
+      </IonContent>
     </IonPage>
   );
 };

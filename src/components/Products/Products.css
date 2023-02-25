@@ -1,7 +1,6 @@
 .product-list {
-    max-width: 90vw;
-    margin: auto;
-    @media screen and (min-width: 960px) {
-        max-width: 60vw
-    }
+  margin-top: 10px;
+}
+.product-list span {
+  margin: 5px 0;
 }
