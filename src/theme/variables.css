@@ -3,7 +3,6 @@ http://ionicframework.com/docs/theming/ */
 
 /** Ionic CSS Variables **/
 :root {
-  background: transparent;
   /** primary **/
   --ion-color-primary: #3880ff;
   --ion-color-primary-rgb: 56, 128, 255;
@@ -234,9 +233,7 @@ http://ionicframework.com/docs/theming/ */
     --ion-card-background: #1e1e1e;
   }
 }
-ion-content ion-page {
-  background: transparent;
-}
+
 .flex {
   display: flex;
 }
@@ -259,4 +256,13 @@ ion-content ion-page {
   @media screen and (min-width: 960px) {
     max-width: 60vw;
   }
+}
+
+ion-input {
+  --color: #373737;
+  --background: #fff;
+  --placeholder-color: #ddd;
+  --placeholder-opacity: 0.8;
+  --border: '1px solid black';
+  --padding: 10px;
 }

@@ -5,8 +5,7 @@
 }
 capacitor-google-map {
   display: inline-block;
-  width: 275px;
-  height: 400px;
-  z-index: 88888;
+  width: 60%;
+  height: 500px;
 }
 
