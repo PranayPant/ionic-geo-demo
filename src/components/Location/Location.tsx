@@ -144,8 +144,12 @@ const Location: React.FC = () => {
               }
               break;
             }
+            case "error": {
+              console.error("Server: Error -->", data);
+              break;
+            }
             default:
-              console.error("Received invalid message type", type);
+              console.error("Received invalid message type:", type);
           }
         });
         const loc = await Geolocation.getCurrentPosition();
@@ -201,31 +205,31 @@ const Location: React.FC = () => {
 
   return (
     <IonPage>
-        <IonContent>
-          <div className="flex-col center location-page">
-            <span>My location is currently</span>
-            {location && (
-              <div className="flex-col">
-                <span>Latitude: {location?.coords.latitude}</span>
-                <span>Longitude: {location?.coords.longitude}</span>
-              </div>
-            )}
-            <capacitor-google-map ref={mapRef} />
-            {map && ws && location && (
-              <div className="flex">
-                <IonInput
-                  placeholder="Send message..."
-                  value={inputModel}
-                  onIonInput={onInput}
-                  ref={ionInputEl}
-                ></IonInput>
-                <IonButton onClick={handleSubmit}>Submit</IonButton>
-                <IonButton onClick={handleSearch}>Search</IonButton>
-                <IonButton onClick={handleRemoveMarkers}>Clear</IonButton>
-              </div>
-            )}
-          </div>
-        </IonContent>
+      <IonContent>
+        <div className="flex-col center location-page">
+          <span>My location is currently</span>
+          {location && (
+            <div className="flex-col">
+              <span>Latitude: {location?.coords.latitude}</span>
+              <span>Longitude: {location?.coords.longitude}</span>
+            </div>
+          )}
+          <capacitor-google-map ref={mapRef} />
+          {map && ws && location && (
+            <div className="flex">
+              <IonInput
+                placeholder="Send message..."
+                value={inputModel}
+                onIonInput={onInput}
+                ref={ionInputEl}
+              ></IonInput>
+              <IonButton onClick={handleSubmit}>Submit</IonButton>
+              <IonButton onClick={handleSearch}>Search</IonButton>
+              <IonButton onClick={handleRemoveMarkers}>Clear</IonButton>
+            </div>
+          )}
+        </div>
+      </IonContent>
     </IonPage>
   );
 };
