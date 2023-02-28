@@ -258,11 +258,21 @@ http://ionicframework.com/docs/theming/ */
   }
 }
 
+ion-header ion-toolbar {
+  height: 55px;
+}
+
+.ion-page ion-content section {
+  position: relative;
+  top: 55px;
+  height: calc(100vh - 55px);
+}
+
 ion-input {
   --color: #373737;
   --background: #fff;
   --placeholder-color: #ddd;
   --placeholder-opacity: 0.8;
-  --border: '1px solid black';
+  --border: "1px solid black";
   --padding: 10px;
 }

@@ -8,9 +8,9 @@ import {
   IonRouterOutlet,
   IonToolbar,
   setupIonicReact,
-  useIonViewWillEnter,
 } from "@ionic/react";
 import { Device, DeviceInfo } from "@capacitor/device";
+import { Geolocation } from "@capacitor/geolocation";
 import { IonReactRouter } from "@ionic/react-router";
 import Home from "./pages/Home";
 
@@ -27,69 +27,60 @@ import "./theme/variables.css";
 import * as React from "react";
 import Products from "./components/Products/Products";
 import Location from "./components/Location/Location";
+import Tabs from "./components/Tabs/Tabs";
+import NavHeader from "./components/NavHeader/NavHeader";
+import { AppStore } from "./types/app";
 
 setupIonicReact();
 
-const SpecialPage: React.FC<{ device: DeviceInfo | null }> = ({ device }) => (
-  <IonPage>
-    <IonContent style={{ position: "relative", top: "100px" }}>
-      Special {device?.platform || ""} page
-    </IonContent>
-  </IonPage>
-);
-
-export const AppContext: React.Context<DeviceInfo | null> =
-  React.createContext<DeviceInfo | null>(null);
+export const AppContext: React.Context<AppStore> =
+  React.createContext<AppStore>({ deviceInfo: undefined, coords: undefined });
 
 const App: React.FC = () => {
-  const [deviceInfo, setDeviceInfo] = React.useState<DeviceInfo | null>(null);
+  const [deviceInfo, setDeviceInfo] = React.useState<DeviceInfo | undefined>(
+    undefined
+  );
+  const [coords, setCoords] = React.useState<
+    google.maps.LatLngLiteral | undefined
+  >(undefined);
   React.useEffect(() => {
-    const getDeviceInfo = async () => {
+    const getInfo = async () => {
       try {
         const info: DeviceInfo = await Device.getInfo();
+        const { coords } = await Geolocation.getCurrentPosition();
         setDeviceInfo(info);
+        setCoords({ lat: coords.latitude, lng: coords.longitude });
       } catch (err) {
         console.error("Device Info:", err);
       }
     };
-    getDeviceInfo();
+    getInfo();
   }, []);
   return (
-    <AppContext.Provider value={deviceInfo}>
+    <AppContext.Provider value={{ deviceInfo, coords }}>
       <IonApp>
         <IonContent fullscreen>
-          <IonHeader>
-            <IonToolbar>
-              <IonRouterLink slot="start" href="/home">
-                <span style={{ padding: "10px" }}>Home</span>
-              </IonRouterLink>
-              <IonRouterLink slot="start" href="/products">
-                <span style={{ padding: "10px" }}>Products</span>
-              </IonRouterLink>
-              <IonRouterLink slot="start" href="/location">
-                <span style={{ padding: "10px" }}>Location</span>
-              </IonRouterLink>
-            </IonToolbar>
-          </IonHeader>
+          {deviceInfo?.platform === "web" && <NavHeader />}
           <IonReactRouter>
-            <IonRouterOutlet>
-              <Route exact path="/home">
-                <Home />
-              </Route>
-              <Route exact path="/location">
-                {deviceInfo?.platform === "web" ? (
+            {deviceInfo?.platform === "web" && (
+              <IonRouterOutlet>
+                <Route exact path="/home">
+                  <Home />
+                </Route>
+                <Route exact path="/location">
                   <Location />
-                ) : (
-                  <SpecialPage device={deviceInfo} />
-                )}
-              </Route>
-              <Route exact path="/products">
-                <Products />
-              </Route>
-              <Route exact path="/">
-                <Redirect to="/home" />
-              </Route>
-            </IonRouterOutlet>
+                </Route>
+                <Route exact path="/products">
+                  <Products />
+                </Route>
+                <Route exact path="/">
+                  <Redirect to="/home" />
+                </Route>
+              </IonRouterOutlet>
+            )}
+            {deviceInfo?.platform !== "web" && (
+              <Route path="/" render={() => <Tabs />} />
+            )}
           </IonReactRouter>
         </IonContent>
       </IonApp>

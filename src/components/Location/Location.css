@@ -1,11 +1,5 @@
-.location-page {
-    position: relative;
-    top: 50px;
-    height: 100%;
-}
 capacitor-google-map {
   display: inline-block;
   width: 60%;
   height: 500px;
 }
-

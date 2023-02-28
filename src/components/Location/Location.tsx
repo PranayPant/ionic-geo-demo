@@ -1,5 +1,4 @@
-import { Geolocation, Position } from "@capacitor/geolocation";
-import { GoogleMap } from "@capacitor/google-maps";
+import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
 import {
   IonPage,
   useIonViewWillEnter,
@@ -13,95 +12,110 @@ import * as React from "react";
 import { RedisGeoSearchResult, RedisGeoUnits } from "../../types/users";
 
 import "./Location.css";
+import { AppContext } from "../../App";
 
 const MEMBER_ID = "1234";
 const RADIUS: number = 100;
 const UNITS: RedisGeoUnits = "mi";
 
 const Location: React.FC = () => {
-  const [location, setLocation] = React.useState<Position | null>(null);
+  const { coords } = React.useContext(AppContext);
   const [nearbyUsers, setNearbyUsers] = React.useState<
     RedisGeoSearchResult[] | null
   >(null);
   const [markers, setMarkers] = React.useState<
     { markerId: string; userId: string }[]
   >([]);
-  const [map, setMap] = React.useState<GoogleMap | null>(null);
+  const [map, setMap] = React.useState<google.maps.Map | null>(null);
   const [ws, setWs] = React.useState<WebSocket | null>(null);
-  const mapRef = React.useRef<HTMLDivElement>(null);
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: "AIzaSyBESUC0Dw1LKX7Nvw5RWVLz43bxmn8OrSk",
+  });
+
+  const onLoad = React.useCallback((map: google.maps.Map) => {
+    const bounds = new window.google.maps.LatLngBounds(coords);
+    map.fitBounds(bounds);
+    setMap(map);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onUnmount = React.useCallback(() => {
+    setMap(null);
+  }, []);
 
   // Add nearby users
-  React.useEffect(() => {
-    if (!nearbyUsers || !map) return;
-    map
-      .addMarkers(
-        nearbyUsers.map((d) => ({
-          title: d.member,
-          coordinate: {
-            lat: parseFloat(`${d.coordinates.latitude}`),
-            lng: parseFloat(`${d.coordinates.longitude}`),
-          },
-        }))
-      )
-      .then((ids) =>
-        setMarkers(
-          nearbyUsers.map((u, i) => ({ markerId: ids[i], userId: u.member }))
-        )
-      )
-      .catch((err) => console.error(err));
-  }, [nearbyUsers, map]);
+  // React.useEffect(() => {
+  //   if (!nearbyUsers || !map) return;
+  //   map
+  //     .addMarkers(
+  //       nearbyUsers.map((d) => ({
+  //         title: d.member,
+  //         coordinate: {
+  //           lat: parseFloat(`${d.coordinates.latitude}`),
+  //           lng: parseFloat(`${d.coordinates.longitude}`),
+  //         },
+  //       }))
+  //     )
+  //     .then((ids) =>
+  //       setMarkers(
+  //         nearbyUsers.map((u, i) => ({ markerId: ids[i], userId: u.member }))
+  //       )
+  //     )
+  //     .catch((err) => console.error(err));
+  // }, [nearbyUsers, map]);
 
   // Add user position and initialize search
-  React.useEffect(() => {
-    if (!map || !location?.coords) return;
-    map.setOnMarkerClickListener((data) => console.log("Listening", data));
-    map
-      .addMarker({
-        title: "My position",
-        coordinate: {
-          lat: location.coords.latitude,
-          lng: location.coords.longitude,
-        },
-      })
-      .then((res) => res)
-      .catch((err) => console.error(err));
-    ws?.send(
-      JSON.stringify({
-        id: nanoid(),
-        type: "ready-to-search",
-        data: {
-          longitude: location?.coords.longitude,
-          latitude: location?.coords.latitude,
-          member: MEMBER_ID,
-          radius: RADIUS,
-          radiusUnit: UNITS,
-        },
-      })
-    );
-  }, [ws, map, location?.coords]);
+  // React.useEffect(() => {
+  //   if (!map || !location?.coords) return;
+  //   map.setOnMarkerClickListener((data) => console.log("Listening", data));
+  //   map
+  //     .addMarker({
+  //       title: "My position",
+  //       coordinate: {
+  //         lat: location.coords.latitude,
+  //         lng: location.coords.longitude,
+  //       },
+  //     })
+  //     .then((res) => res)
+  //     .catch((err) => console.error(err));
+  //   ws?.send(
+  //     JSON.stringify({
+  //       id: nanoid(),
+  //       type: "ready-to-search",
+  //       data: {
+  //         longitude: location?.coords.longitude,
+  //         latitude: location?.coords.latitude,
+  //         member: MEMBER_ID,
+  //         radius: RADIUS,
+  //         radiusUnit: UNITS,
+  //       },
+  //     })
+  //   );
+  // }, [ws, map, location?.coords]);
 
   // Initialize map
-  React.useLayoutEffect(() => {
-    if (!mapRef?.current || !location?.coords) return;
-    const { coords } = location;
-    GoogleMap.create({
-      id: "map",
-      element: mapRef.current,
-      apiKey: "AIzaSyBESUC0Dw1LKX7Nvw5RWVLz43bxmn8OrSk",
-      config: {
-        center: {
-          lat: coords.latitude,
-          lng: coords.longitude,
-        },
-        zoom: 7,
-      },
-    })
-      .then((map) => setMap(map))
-      .catch((err) => console.error(err));
-  }, [location]);
+  // React.useLayoutEffect(() => {
+  //   if (!mapRef?.current || !location?.coords) return;
+  //   const { coords } = location;
+  //   GoogleMap.create({
+  //     id: "map",
+  //     element: mapRef.current,
+  //     apiKey: "AIzaSyBESUC0Dw1LKX7Nvw5RWVLz43bxmn8OrSk",
+  //     config: {
+  //       center: {
+  //         lat: coords.latitude,
+  //         lng: coords.longitude,
+  //       },
+  //       zoom: 7,
+  //     },
+  //   })
+  //     .then((map) => setMap(map))
+  //     .catch((err) => console.error(err));
+  // }, [location]);
 
   useIonViewWillEnter(() => {
-    const initializeLocationService = async () => {
+    const initializeMessaging = async () => {
       try {
         const ws = new WebSocket("ws://localhost:3001");
         ws.addEventListener("open", () => {
@@ -152,37 +166,16 @@ const Location: React.FC = () => {
               console.error("Received invalid message type:", type);
           }
         });
-        const loc = await Geolocation.getCurrentPosition();
-        setLocation(loc);
         setWs(ws);
       } catch (err) {
         console.error("Error Initializing Location:", JSON.stringify(err));
       }
     };
-    initializeLocationService();
+    initializeMessaging();
   });
   useIonViewWillLeave(() => {
-    map?.destroy();
     ws?.close();
   });
-
-  const [inputModel, setInputModel] = React.useState("");
-  const ionInputEl = React.useRef<HTMLIonInputElement>(null);
-
-  const onInput = (ev: Event) => {
-    const value = (ev.target as HTMLIonInputElement).value as string;
-    setInputModel(value);
-
-    // TODO: investigate if we need this
-    // const inputCmp = ionInputEl.current;
-    // if (inputCmp !== null) {
-    //   inputCmp.value = value;
-    // }
-  };
-
-  const handleSubmit = () => {
-    ws?.send(inputModel);
-  };
 
   const handleSearch = () => {
     ws?.send(
@@ -198,37 +191,41 @@ const Location: React.FC = () => {
     );
   };
 
-  const handleRemoveMarkers = () => {
-    if (!map) return;
-    map.removeMarkers(markers.map((m) => m.markerId));
-  };
+  // const handleRemoveMarkers = () => {
+  //   if (!map) return;
+  //   map.removeMarkers(markers.map((m) => m.markerId));
+  // };
 
   return (
     <IonPage>
       <IonContent>
-        <div className="flex-col center location-page">
-          <span>My location is currently</span>
-          {location && (
-            <div className="flex-col">
-              <span>Latitude: {location?.coords.latitude}</span>
-              <span>Longitude: {location?.coords.longitude}</span>
-            </div>
-          )}
-          <capacitor-google-map ref={mapRef} />
-          {map && ws && location && (
-            <div className="flex">
-              <IonInput
-                placeholder="Send message..."
-                value={inputModel}
-                onIonInput={onInput}
-                ref={ionInputEl}
-              ></IonInput>
-              <IonButton onClick={handleSubmit}>Submit</IonButton>
+        <section className="flex-col center">
+          {isLoaded && coords && map && (
+            <>
+              <GoogleMap
+                mapContainerStyle={{ width: 400, height: 400 }}
+                center={coords}
+                zoom={10}
+                onLoad={onLoad}
+                onUnmount={onUnmount}
+              >
+                {/* Child components, such as markers, info windows, etc. */}
+                <Marker position={coords} />
+                {nearbyUsers?.map((u) => (
+                  <Marker
+                    position={
+                      {
+                        lat: u.coordinates.latitude,
+                        lng: u.coordinates.longitude,
+                      } as google.maps.LatLngLiteral
+                    }
+                  />
+                ))}
+              </GoogleMap>
               <IonButton onClick={handleSearch}>Search</IonButton>
-              <IonButton onClick={handleRemoveMarkers}>Clear</IonButton>
-            </div>
+            </>
           )}
-        </div>
+        </section>
       </IonContent>
     </IonPage>
   );
