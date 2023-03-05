@@ -20,7 +20,7 @@ import "./Location.css";
 import { AppContext } from "../../App";
 
 const MEMBER_ID = "1234";
-const RADIUS: number = 100;
+const RADIUS: number = 1000;
 const UNITS: RedisGeoUnits = "mi";
 
 const Location: React.FC = () => {
@@ -103,15 +103,27 @@ const Location: React.FC = () => {
               setNearbyUsers(data);
               break;
             }
-            case "changing-position": {
-              console.log("Server: changing-position -->", data);
-              break;
-            }
             case "user-message": {
               console.log("Server: user-message -->", data);
               const payload = JSON.parse(data);
+              const updatedUser: RedisGeoSearchResult = payload.data;
               switch (payload.action) {
                 case "position-change": {
+                  setNearbyUsers((prev) => {
+                    const users = prev || [];
+                    return users.map((user) => {
+                      if (user.member === updatedUser.member) {
+                        return {
+                          ...user,
+                          coordinates: {
+                            latitude: updatedUser.coordinates.latitude,
+                            longitude: updatedUser.coordinates.longitude,
+                          },
+                        };
+                      }
+                      return user;
+                    });
+                  });
                   break;
                 }
                 default:
@@ -176,6 +188,7 @@ const Location: React.FC = () => {
                             key={u.member}
                             clusterer={clusterer}
                             title={u.member}
+                            label={`${u.coordinates.latitude}, ${u.coordinates.longitude}`}
                             position={
                               {
                                 lat: parseFloat(`${u.coordinates.latitude}`),
