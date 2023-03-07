@@ -1,8 +1,9 @@
 import {
   GoogleMap,
-  useJsApiLoader,
   Marker,
   MarkerClusterer,
+  DirectionsService,
+  LoadScript,
 } from "@react-google-maps/api";
 import {
   IonPage,
@@ -10,7 +11,6 @@ import {
   IonContent,
   IonButton,
   useIonViewWillLeave,
-  IonInput,
 } from "@ionic/react";
 import { nanoid } from "nanoid";
 import * as React from "react";
@@ -18,6 +18,8 @@ import { RedisGeoSearchResult, RedisGeoUnits } from "../../types/users";
 
 import "./Location.css";
 import { AppContext } from "../../App";
+import NearbyUsers from "./NearbyUsers";
+import DirectionMap from "./DirectionMap";
 
 const MEMBER_ID = "1234";
 const RADIUS: number = 1000;
@@ -30,10 +32,6 @@ const Location: React.FC = () => {
   >(null);
   const [map, setMap] = React.useState<google.maps.Map | null>(null);
   const [ws, setWs] = React.useState<WebSocket | null>(null);
-  const { isLoaded } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: "AIzaSyBESUC0Dw1LKX7Nvw5RWVLz43bxmn8OrSk",
-  });
 
   const onLoad = React.useCallback((map: google.maps.Map) => {
     setMap(map);
@@ -167,8 +165,11 @@ const Location: React.FC = () => {
     <IonPage>
       <IonContent>
         <section className="flex-col center">
-          {isLoaded && coords && (
-            <>
+          {coords && (
+            <LoadScript
+              googleMapsApiKey={"AIzaSyD03ecQ6fP_H6TgB2QUi531qanO4XmMpI8"}
+              loadingElement={<div />}
+            >
               <GoogleMap
                 mapContainerStyle={{ width: 700, height: 700 }}
                 center={coords}
@@ -177,32 +178,11 @@ const Location: React.FC = () => {
                 onUnmount={onUnmount}
               >
                 {/* Child components, such as markers, info windows, etc. */}
-                <Marker title={MEMBER_ID} position={coords} />
-                <MarkerClusterer>
-                  {(clusterer) => (
-                    <>
-                      {nearbyUsers
-                        ?.filter((u) => u.member !== MEMBER_ID)
-                        .map((u) => (
-                          <Marker
-                            key={u.member}
-                            clusterer={clusterer}
-                            title={u.member}
-                            label={`${u.coordinates.latitude}, ${u.coordinates.longitude}`}
-                            position={
-                              {
-                                lat: parseFloat(`${u.coordinates.latitude}`),
-                                lng: parseFloat(`${u.coordinates.longitude}`),
-                              } as google.maps.LatLngLiteral
-                            }
-                          />
-                        ))}
-                    </>
-                  )}
-                </MarkerClusterer>
+                {/* <NearbyUsers title={MEMBER_ID} coords={coords} nearbyUsers={nearbyUsers} /> */}
+                <DirectionMap />
               </GoogleMap>
               <IonButton onClick={handleSearch}>Search</IonButton>
-            </>
+            </LoadScript>
           )}
         </section>
       </IonContent>
