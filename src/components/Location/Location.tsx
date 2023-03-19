@@ -1,66 +1,61 @@
-import {
-  GoogleMap,
-  Marker,
-  MarkerClusterer,
-  DirectionsService,
-  LoadScript,
-} from "@react-google-maps/api";
-import {
-  IonPage,
-  useIonViewWillEnter,
-  IonContent,
-  IonButton,
-  useIonViewWillLeave,
-} from "@ionic/react";
-import { nanoid } from "nanoid";
-import * as React from "react";
-import { RedisGeoSearchResult, RedisGeoUnits } from "../../types/users";
+import { IonPage, useIonViewWillEnter, IonContent, IonButton, useIonViewWillLeave } from '@ionic/react'
+import { nanoid } from 'nanoid'
+import * as React from 'react'
+import { RedisGeoSearchResult, RedisGeoUnits } from '../../types/users'
 
-import "./Location.css";
-import { AppContext } from "../../App";
-import NearbyUsers from "./NearbyUsers";
-import DirectionMap from "./DirectionMap";
+import './Location.css'
+import { AppContext } from '../../App'
 
-const MEMBER_ID = "1234";
-const RADIUS: number = 1000;
-const UNITS: RedisGeoUnits = "mi";
+import useMap from '../../hooks/maps/useMap'
+import useMarkers from '../../hooks/maps/useMarkers'
+
+const MEMBER_ID = '1234'
+const RADIUS: number = 1000
+const UNITS: RedisGeoUnits = 'mi'
 
 const Location: React.FC = () => {
-  const { coords } = React.useContext(AppContext);
-  const [nearbyUsers, setNearbyUsers] = React.useState<
-    RedisGeoSearchResult[] | null
-  >(null);
-  const [map, setMap] = React.useState<google.maps.Map | null>(null);
-  const [ws, setWs] = React.useState<WebSocket | null>(null);
-
-  const onLoad = React.useCallback((map: google.maps.Map) => {
-    setMap(map);
-  }, []);
-
-  const onUnmount = React.useCallback(() => {
-    setMap(null);
-  }, []);
-
-  // Add nearby users
-  React.useEffect(() => {
-    if (!nearbyUsers || !map) return;
-    const bounds = new google.maps.LatLngBounds();
-    nearbyUsers.forEach((u) => {
-      bounds.extend({
-        lat: parseFloat(`${u.coordinates.latitude}`),
-        lng: parseFloat(`${u.coordinates.longitude}`),
-      });
-    });
-    map.fitBounds(bounds);
-  }, [nearbyUsers, map]);
+  const { coords } = React.useContext(AppContext)
+  const [nearbyUsers, setNearbyUsers] = React.useState<RedisGeoSearchResult[] | null>(null)
+  const [ws, setWs] = React.useState<WebSocket | null>(null)
+  const mapRef = React.useRef<HTMLDivElement>(null)
+  const { map } = useMap({
+    ref: mapRef,
+    center: coords as google.maps.LatLngLiteral,
+    bounds: nearbyUsers?.map((u) => ({
+      lat: parseFloat(`${u.coordinates.latitude}`),
+      lng: parseFloat(`${u.coordinates.longitude}`),
+    })),
+  })
+  const { addMarkers, removeMarkers, markers } = useMarkers({
+    map,
+  })
 
   // Add user position and initialize search
   React.useEffect(() => {
-    if (!map || !coords || !ws) return;
+    addMarkers({ title: MEMBER_ID, position: coords, draggable: true })
+  }, [coords, addMarkers])
+
+  // Add markers for nearby users
+  React.useEffect(() => {
+    if (!nearbyUsers) return
+    addMarkers(
+      nearbyUsers.map((u) => ({
+        title: u.member,
+        position: {
+          lat: parseFloat(`${u.coordinates.latitude}`),
+          lng: parseFloat(`${u.coordinates.longitude}`),
+        },
+        draggable: false,
+      }))
+    )
+  }, [nearbyUsers, addMarkers])
+
+  React.useEffect(() => {
+    if (!map || !coords || !ws) return
     ws.send(
       JSON.stringify({
         id: nanoid(),
-        type: "ready-to-search",
+        type: 'ready-to-search',
         data: {
           longitude: coords.lng,
           latitude: coords.lat,
@@ -69,46 +64,46 @@ const Location: React.FC = () => {
           radiusUnit: UNITS,
         },
       })
-    );
-  }, [ws, map, coords]);
+    )
+  }, [ws, map, coords])
 
   useIonViewWillEnter(() => {
     const initializeMessaging = async () => {
       try {
-        const ws = new WebSocket("ws://localhost:3001");
-        ws.addEventListener("open", () => {
-          console.log("Client open for connections");
-        });
-        ws.addEventListener("close", () => {
-          console.log("Client has closed connection");
-        });
-        ws.addEventListener("error", (err) => {
-          console.error("WebSocket connection error:", JSON.stringify(err));
-        });
-        ws.addEventListener("message", (message) => {
-          const { type, data } = JSON.parse(message.data);
+        const ws = new WebSocket('ws://localhost:3001')
+        ws.addEventListener('open', () => {
+          console.log('Client open for connections')
+        })
+        ws.addEventListener('close', () => {
+          console.log('Client has closed connection')
+        })
+        ws.addEventListener('error', (err) => {
+          console.error('WebSocket connection error:', JSON.stringify(err))
+        })
+        ws.addEventListener('message', (message) => {
+          const { type, data } = JSON.parse(message.data)
           switch (type) {
-            case "connect": {
-              console.log("Server: connect -->", data);
-              setWs(ws);
-              break;
+            case 'connect': {
+              console.log('Server: connect -->', data)
+              setWs(ws)
+              break
             }
-            case "initialized-user": {
-              console.log("Server: initialized-user -->", data);
-              break;
+            case 'initialized-user': {
+              console.log('Server: initialized-user -->', data)
+              break
             }
-            case "nearby-users": {
-              setNearbyUsers(data);
-              break;
+            case 'nearby-users': {
+              setNearbyUsers(data)
+              break
             }
-            case "user-message": {
-              console.log("Server: user-message -->", data);
-              const payload = JSON.parse(data);
-              const updatedUser: RedisGeoSearchResult = payload.data;
+            case 'user-message': {
+              console.log('Server: user-message -->', data)
+              const payload = JSON.parse(data)
+              const updatedUser: RedisGeoSearchResult = payload.data
               switch (payload.action) {
-                case "position-change": {
+                case 'position-change': {
                   setNearbyUsers((prev) => {
-                    const users = prev || [];
+                    const users = prev || []
                     return users.map((user) => {
                       if (user.member === updatedUser.member) {
                         return {
@@ -117,77 +112,66 @@ const Location: React.FC = () => {
                             latitude: updatedUser.coordinates.latitude,
                             longitude: updatedUser.coordinates.longitude,
                           },
-                        };
+                        }
                       }
-                      return user;
-                    });
-                  });
-                  break;
+                      return user
+                    })
+                  })
+                  break
                 }
                 default:
-                  console.error("Invalid user message action", payload.action);
+                  console.error('Invalid user message action', payload.action)
               }
-              break;
+              break
             }
-            case "error": {
-              console.error("Server: Error -->", data);
-              break;
+            case 'error': {
+              console.error('Server: Error -->', data)
+              break
             }
             default:
-              console.error("Received invalid message type:", type);
+              console.error('Received invalid message type:', type)
           }
-        });
+        })
       } catch (err) {
-        console.error("Error Initializing Location:", JSON.stringify(err));
+        console.error('Error Initializing Location:', JSON.stringify(err))
       }
-    };
-    initializeMessaging();
-  });
+    }
+    initializeMessaging()
+  })
   useIonViewWillLeave(() => {
-    ws?.close();
-  });
+    ws?.close()
+  })
 
   const handleSearch = () => {
     ws?.send(
       JSON.stringify({
         id: nanoid(),
-        type: "searching-positions",
+        type: 'searching-positions',
         data: {
           member: MEMBER_ID,
           radius: RADIUS,
           radiusUnit: UNITS,
         },
       })
-    );
-  };
+    )
+  }
 
   return (
     <IonPage>
       <IonContent>
         <section className="flex-col center">
           {coords && (
-            <LoadScript
-              googleMapsApiKey={"AIzaSyD03ecQ6fP_H6TgB2QUi531qanO4XmMpI8"}
-              loadingElement={<div />}
-            >
-              <GoogleMap
-                mapContainerStyle={{ width: 700, height: 700 }}
-                center={coords}
-                zoom={12}
-                onLoad={onLoad}
-                onUnmount={onUnmount}
-              >
-                {/* Child components, such as markers, info windows, etc. */}
-                {/* <NearbyUsers title={MEMBER_ID} coords={coords} nearbyUsers={nearbyUsers} /> */}
-                <DirectionMap />
-              </GoogleMap>
-              <IonButton onClick={handleSearch}>Search</IonButton>
-            </LoadScript>
+            <>
+              <div id="map-container" style={{ height: 400, width: 400 }} ref={mapRef} />
+              <button style={{ padding: 10, margin: 10, borderRadius: 10 }} type="button" onClick={handleSearch}>
+                Search nearby users
+              </button>
+            </>
           )}
         </section>
       </IonContent>
     </IonPage>
-  );
-};
+  )
+}
 
-export default Location;
+export default Location
