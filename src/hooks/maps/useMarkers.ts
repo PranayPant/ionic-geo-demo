@@ -1,58 +1,50 @@
 import * as React from 'react'
-import { nanoid } from 'nanoid'
 
 type Marker = google.maps.Marker
-type MarkerOptions = google.maps.MarkerOptions
+
+export interface MarkerOptions extends google.maps.MarkerOptions {
+  title: string
+}
 
 export interface MarkerProps {
   map?: google.maps.Map | null
+  onDragEnd?: (event: google.maps.MapMouseEvent) => void
+  onClick?: (event: google.maps.MapMouseEvent) => void
 }
 
 export interface UseMarker {
   addMarkers: (opts: MarkerOptions | MarkerOptions[]) => void
   removeMarkers: (id: string | string[]) => void
-  markers: ReadonlyArray<MarkerObject>
+  markers: ReadonlyArray<Marker>
+  activeMarker: Readonly<Marker> | null
 }
 
-export interface MarkerObject extends Marker {
-  id: string
-  currentPos?: google.maps.LatLngLiteral
-}
-
-const useMarkers = ({ map: gmap }: MarkerProps): UseMarker => {
+const useMarkers = ({ map: gmap, onDragEnd, onClick }: MarkerProps): UseMarker => {
   const [map, setMap] = React.useState<google.maps.Map | null>(null)
-  const [markerObjs, setMarkerObjs] = React.useState<MarkerObject[]>([])
-
-  const handlePositionChange = (id: string, currentPos?: google.maps.LatLngLiteral) => {
-    if (!currentPos) return
-    setMarkerObjs(
-      (prev) =>
-        [...prev.filter((mo) => mo.id !== id), { ...prev.find((mo) => mo.id === id), id, currentPos }] as MarkerObject[]
-    )
-  }
+  const [markers, setMarkers] = React.useState<Marker[]>([])
+  const [activeMarker, setActiveMarker] = React.useState<Marker | null>(null)
 
   const addMarkers = React.useCallback(
     (opt: MarkerOptions | MarkerOptions[]) => {
       if (!map) return
       const opts = [opt].flat()
-      const ids = opts.map((_) => nanoid())
       const markers = opts.map((o, i) => {
-        const marker = new google.maps.Marker({ map, ...o })
+        const { title, ...options } = o
+        const marker = new google.maps.Marker({ map, title, ...options })
         marker.addListener('dragend', (event: google.maps.MapMouseEvent) => {
-          handlePositionChange(ids[i], event.latLng?.toJSON())
+          onDragEnd && onDragEnd(event)
+        })
+        marker.addListener('click', (event: google.maps.MapMouseEvent) => {
+          setActiveMarker(markers.find((mo) => mo?.getTitle() === title) || null)
+          onClick && onClick(event)
         })
         return marker
       })
-      const markerObjs = markers.map(
-        (marker, i) =>
-          ({
-            id: ids[i],
-            currentPos: marker.getPosition()?.toJSON(),
-            ...marker,
-          } as MarkerObject)
-      )
-      setMarkerObjs((prev) => [...prev, ...markerObjs])
+
+      setMarkers((prev) => [...prev, ...markers])
     },
+    // Do not recompute on onDrandEnd - this should not change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [map]
   )
 
@@ -60,9 +52,9 @@ const useMarkers = ({ map: gmap }: MarkerProps): UseMarker => {
     (id: string | string[]) => {
       if (!map) return
       const ids = [id].flat()
-      setMarkerObjs((prev) => {
-        prev.find((mo) => mo.id === id)?.setMap(null)
-        return prev.filter((mo) => !ids.includes(mo.id))
+      setMarkers((prev) => {
+        prev.find((mo) => mo.getTitle() === id)?.setMap(null)
+        return prev.filter((mo) => !ids.includes(mo.getTitle() as string))
       })
     },
     [map]
@@ -75,11 +67,15 @@ const useMarkers = ({ map: gmap }: MarkerProps): UseMarker => {
 
   React.useEffect(() => {
     return () => {
-      setMarkerObjs([])
+      setMarkers((prev) => {
+        prev.forEach((mo) => mo.unbindAll())
+        return []
+      })
+      map && google.maps.event.clearInstanceListeners(map)
     }
-  }, [])
+  }, [map])
 
-  return { addMarkers, removeMarkers, markers: markerObjs }
+  return { addMarkers, removeMarkers, markers, activeMarker }
 }
 
 export default useMarkers

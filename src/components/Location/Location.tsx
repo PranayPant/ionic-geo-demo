@@ -8,6 +8,7 @@ import { AppContext } from '../../App'
 
 import useMap from '../../hooks/maps/useMap'
 import useMarkers from '../../hooks/maps/useMarkers'
+import CustomInfoWindow from '../CustomInfoWindow'
 
 const MEMBER_ID = '1234'
 const RADIUS: number = 1000
@@ -18,6 +19,7 @@ const Location: React.FC = () => {
   const [nearbyUsers, setNearbyUsers] = React.useState<RedisGeoSearchResult[] | null>(null)
   const [ws, setWs] = React.useState<WebSocket | null>(null)
   const mapRef = React.useRef<HTMLDivElement>(null)
+  const [showInfoWindow, setShowInfoWindow] = React.useState<boolean>(false)
   const { map } = useMap({
     ref: mapRef,
     center: coords as google.maps.LatLngLiteral,
@@ -26,27 +28,57 @@ const Location: React.FC = () => {
       lng: parseFloat(`${u.coordinates.longitude}`),
     })),
   })
-  const { addMarkers, removeMarkers, markers } = useMarkers({
+  const { addMarkers, removeMarkers, markers, activeMarker } = useMarkers({
     map,
+    onDragEnd: (event: google.maps.MapMouseEvent) => {
+      ws?.send(
+        JSON.stringify({
+          id: nanoid(),
+          type: 'changing-position',
+          data: {
+            longitude: event.latLng?.toJSON().lng,
+            latitude: event.latLng?.toJSON().lat,
+            member: MEMBER_ID,
+            radius: RADIUS,
+            radiusUnit: UNITS,
+          },
+        })
+      )
+    },
+    onClick: () => setShowInfoWindow((prev) => !prev),
   })
+
+  React.useEffect(() => {
+    console.log('markers: ', markers)
+  }, [markers])
 
   // Add user position and initialize search
   React.useEffect(() => {
-    addMarkers({ title: MEMBER_ID, position: coords, draggable: true })
+    if (!coords || !addMarkers) return
+    console.log('adding marker')
+    addMarkers({
+      title: MEMBER_ID,
+      position: coords,
+      draggable: true,
+      clickable: true,
+    })
   }, [coords, addMarkers])
 
   // Add markers for nearby users
   React.useEffect(() => {
     if (!nearbyUsers) return
     addMarkers(
-      nearbyUsers.map((u) => ({
-        title: u.member,
-        position: {
-          lat: parseFloat(`${u.coordinates.latitude}`),
-          lng: parseFloat(`${u.coordinates.longitude}`),
-        },
-        draggable: false,
-      }))
+      nearbyUsers
+        .filter((u) => u.member !== MEMBER_ID)
+        .map((u) => ({
+          title: u.member,
+          position: {
+            lat: parseFloat(`${u.coordinates.latitude}`),
+            lng: parseFloat(`${u.coordinates.longitude}`),
+          },
+          draggable: false,
+          clickable: true,
+        }))
     )
   }, [nearbyUsers, addMarkers])
 
@@ -93,6 +125,7 @@ const Location: React.FC = () => {
               break
             }
             case 'nearby-users': {
+              console.log(data)
               setNearbyUsers(data)
               break
             }
@@ -166,6 +199,10 @@ const Location: React.FC = () => {
               <button style={{ padding: 10, margin: 10, borderRadius: 10 }} type="button" onClick={handleSearch}>
                 Search nearby users
               </button>
+              <CustomInfoWindow
+                open={showInfoWindow}
+                refEl={document.querySelector(`[aria-label="${activeMarker?.getTitle()}"]`)}
+              />
             </>
           )}
         </section>
