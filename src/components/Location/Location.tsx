@@ -195,14 +195,16 @@ const Location: React.FC = () => {
         <section className="flex-col center">
           {coords && (
             <>
-              <div id="map-container" style={{ height: 400, width: 400 }} ref={mapRef} />
+              <div id="map-container" style={{ height: 400, width: 400 }} ref={mapRef}>
+                <CustomInfoWindow
+                  open={showInfoWindow}
+                  onClose={() => setShowInfoWindow(false)}
+                  refEl={document.querySelector(`[aria-label="${activeMarker?.getTitle()}"]`)}
+                />
+              </div>
               <button style={{ padding: 10, margin: 10, borderRadius: 10 }} type="button" onClick={handleSearch}>
                 Search nearby users
               </button>
-              <CustomInfoWindow
-                open={showInfoWindow}
-                refEl={document.querySelector(`[aria-label="${activeMarker?.getTitle()}"]`)}
-              />
             </>
           )}
         </section>

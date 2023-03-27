@@ -1,15 +1,19 @@
 import { Placement } from '@popperjs/core'
 import * as React from 'react'
 import { usePopper } from 'react-popper'
+import ClickAwayListener from 'react-click-away-listener'
+
+import './styles.css'
 
 export interface CustomInfoWindowProps {
   refEl?: Element | null
   ref?: React.RefObject<HTMLDivElement>
   placement?: Placement
   open: boolean
+  onClose: VoidFunction
 }
 
-const CustomInfoWindow: React.FC<CustomInfoWindowProps> = ({ refEl, ref: _ref, placement = 'top', open }) => {
+const CustomInfoWindow: React.FC<CustomInfoWindowProps> = ({ refEl, ref: _ref, placement = 'top', open, onClose }) => {
   const [ref, setRef] = React.useState<React.RefObject<HTMLDivElement> | undefined>(undefined)
   const [popperRef, setPopperRef] = React.useState<HTMLDivElement | null>(null)
   const { styles, attributes } = usePopper(ref?.current || refEl, popperRef, {
@@ -22,6 +26,12 @@ const CustomInfoWindow: React.FC<CustomInfoWindowProps> = ({ refEl, ref: _ref, p
           offset: [0, 10],
         },
       },
+      {
+        name: 'flip',
+        options: {
+          fallbackPlacements: ['right', 'left'],
+        },
+      },
     ],
   })
   React.useEffect(() => {
@@ -31,9 +41,14 @@ const CustomInfoWindow: React.FC<CustomInfoWindowProps> = ({ refEl, ref: _ref, p
   return (
     <>
       {open && (
-        <div id="tooltip" ref={setPopperRef} style={styles.popper} {...attributes.popper}>
-          This is a popper element
-        </div>
+        <ClickAwayListener onClickAway={onClose}>
+          <div id="tooltip" ref={setPopperRef} style={styles.popper} {...attributes.popper}>
+            <div className="content">This is a popper element</div>
+            <button onClick={onClose} className="close-icon">
+              x
+            </button>
+          </div>
+        </ClickAwayListener>
       )}
     </>
   )
