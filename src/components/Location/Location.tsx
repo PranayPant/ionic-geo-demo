@@ -9,6 +9,7 @@ import { AppContext } from '../../App'
 import useMap from '../../hooks/maps/useMap'
 import useMarkers from '../../hooks/maps/useMarkers'
 import CustomInfoWindow from '../CustomInfoWindow'
+import DirectionsMap from '../DirectionsMap'
 
 const MEMBER_ID = '1234'
 const RADIUS: number = 1000
@@ -45,8 +46,16 @@ const Location: React.FC = () => {
         })
       )
     },
-    onClick: () => setShowInfoWindow((prev) => !prev),
+    onClick: () => {
+      setShowInfoWindow((prev) => !prev)
+      setShowDirections(true)
+    },
   })
+  const myMarker = React.useMemo(() => {
+    return markers.find((m) => m.getTitle() === MEMBER_ID)
+  }, [markers])
+
+  const [showDirections, setShowDirections] = React.useState<boolean>(true)
 
   React.useEffect(() => {
     console.log('markers: ', markers)
@@ -60,7 +69,7 @@ const Location: React.FC = () => {
       title: MEMBER_ID,
       position: coords,
       draggable: true,
-      clickable: true,
+      clickable: false,
     })
   }, [coords, addMarkers])
 
@@ -195,13 +204,24 @@ const Location: React.FC = () => {
         <section className="flex-col center">
           {coords && (
             <>
-              <div id="map-container" style={{ height: 400, width: 400 }} ref={mapRef}>
-                <CustomInfoWindow
-                  open={showInfoWindow}
-                  onClose={() => setShowInfoWindow(false)}
-                  refEl={document.querySelector(`[aria-label="${activeMarker?.getTitle()}"]`)}
-                />
+              <div className="flex" style={{ height: '80vh', width: '80vw' }}>
+                <div id="map-container" style={{ height: '100%', width: '100%' }} ref={mapRef}>
+                  <CustomInfoWindow
+                    open={showInfoWindow}
+                    onClose={() => setShowInfoWindow(false)}
+                    refEl={document.querySelector(`[aria-label="${activeMarker?.getTitle()}"]`)}
+                  />
+                </div>
+                {myMarker && activeMarker && showDirections && (
+                  <DirectionsMap
+                    map={map}
+                    origin={myMarker.getPosition() as google.maps.LatLng}
+                    destination={activeMarker.getPosition() as google.maps.LatLng}
+                    onCloseDirections={() => setShowDirections(false)}
+                  />
+                )}
               </div>
+
               <button style={{ padding: 10, margin: 10, borderRadius: 10 }} type="button" onClick={handleSearch}>
                 Search nearby users
               </button>

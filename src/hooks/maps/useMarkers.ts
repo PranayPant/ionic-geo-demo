@@ -30,11 +30,13 @@ const useMarkers = ({ map: gmap, onDragEnd, onClick }: MarkerProps): UseMarker =
       const opts = [opt].flat()
       const markers = opts.map((o, i) => {
         const { title, ...options } = o
-        const marker = new google.maps.Marker({ map, title, ...options })
+        const marker: Marker = new google.maps.Marker({ map, title, ...options })
         marker.addListener('dragend', (event: google.maps.MapMouseEvent) => {
+          if (!marker.getDraggable()) return
           onDragEnd && onDragEnd(event)
         })
         marker.addListener('click', (event: google.maps.MapMouseEvent) => {
+          if (!marker.getClickable()) return
           setActiveMarker(markers.find((mo) => mo?.getTitle() === title) || null)
           onClick && onClick(event)
         })
