@@ -1,0 +1,19 @@
+.directions-panel-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.directions-panel {
+    height: 100%;
+    width: 100%;
+    padding: 20px;
+    overflow-y: scroll;
+}
+
+.directions-panel-container .close-btn {
+    margin: 20px;
+    padding: 10px;
+    width: fit-content;
+    align-self: flex-end;
+}

@@ -47,15 +47,19 @@ const Location: React.FC = () => {
       )
     },
     onClick: () => {
-      setShowInfoWindow((prev) => !prev)
-      setShowDirections(true)
+      setShowInfoWindow(true)
     },
   })
   const myMarker = React.useMemo(() => {
     return markers.find((m) => m.getTitle() === MEMBER_ID)
   }, [markers])
 
-  const [showDirections, setShowDirections] = React.useState<boolean>(true)
+  const [showDirections, setShowDirections] = React.useState<boolean>(false)
+
+  const handleInfoWindowActions = () => {
+    setShowDirections(true)
+    setShowInfoWindow(false)
+  }
 
   React.useEffect(() => {
     console.log('markers: ', markers)
@@ -209,6 +213,7 @@ const Location: React.FC = () => {
                   <CustomInfoWindow
                     open={showInfoWindow}
                     onClose={() => setShowInfoWindow(false)}
+                    onShowDirections={handleInfoWindowActions}
                     refEl={document.querySelector(`[aria-label="${activeMarker?.getTitle()}"]`)}
                   />
                 </div>

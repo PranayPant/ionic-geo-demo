@@ -258,6 +258,16 @@ http://ionicframework.com/docs/theming/ */
   }
 }
 
+.btn-link {
+  background: none;
+  color: var(--ion-color-primary);
+}
+
+.btn-link:hover{
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 ion-header ion-toolbar {
   height: 55px;
 }

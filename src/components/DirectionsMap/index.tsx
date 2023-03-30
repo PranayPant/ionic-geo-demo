@@ -1,4 +1,5 @@
 import * as React from 'react'
+import './styles.css'
 
 export interface DirectionsMapProps {
   map: google.maps.Map | null
@@ -55,19 +56,12 @@ const DirectionsMap: React.FC<DirectionsMapProps> = ({
   }
 
   return (
-    <article
-      ref={panelRef}
-      id="directions-panel"
-      style={{ height: '100%', width: '100%', padding: 20, overflowY: 'scroll' }}
-    >
-      <button
-        style={{ margin: 20, padding: 10, position: 'relative', top: 0, right: 0 }}
-        type="submit"
-        onClick={handleCloseDirections}
-      >
+    <div className="directions-panel-container">
+      <button className="close-btn" type="submit" onClick={handleCloseDirections}>
         X
       </button>
-    </article>
+      <article ref={panelRef} className="directions-panel" />
+    </div>
   )
 }
 
